@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import SeatList from '../components/SeatList';
@@ -11,12 +12,18 @@ const BookingPage = () => {
   const { danhSachGhe, gheDangChon } = useSelector(state => state.seat);
   const [userInfo, setUserInfo] = useState({ name: '', quantity: '' });
   const [allowSelecting, setAllowSelecting] = useState(false);
-  const [bookingHistory, setBookingHistory] = useState([]);
+  const [bookingHistory, setBookingHistory] = useState(() => {
+    const storedHistory = localStorage.getItem('bookingHistory');
+    return storedHistory ? JSON.parse(storedHistory) : [];
+  });
 
   useEffect(() => {
-    dispatch(resetGhe(['A11', 'A12']));
-    setBookingHistory([]); // reset mỗi lần reload
+    dispatch(resetGhe(bookingHistory.flatMap(item => item.seats)));
   }, [dispatch]);
+
+  useEffect(() => {
+    localStorage.setItem('bookingHistory', JSON.stringify(bookingHistory));
+  }, [bookingHistory]);
 
   const handleSelect = (ghe) => {
     if (!allowSelecting) {
@@ -41,11 +48,21 @@ const BookingPage = () => {
         seats: gheDangChon.map(g => g.soGhe),
         quantity: gheDangChon.length,
       };
-      const newHistory = [data];
-      setBookingHistory(newHistory);
+      setBookingHistory(prev => [...prev, data]);
       dispatch(datVe());
-      navigate('/result');
+      setUserInfo({ name: '', quantity: '' });
+      setAllowSelecting(false);
     }
+  };
+
+  const clearHistory = () => {
+    setBookingHistory([]);
+    localStorage.removeItem('bookingHistory');
+    dispatch(resetGhe([]));
+  };
+
+  const goToResultPage = () => {
+    navigate('/result');
   };
 
   return (
@@ -96,12 +113,6 @@ const BookingPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
         <div className="lg:col-span-2">
-          <div className="grid grid-cols-[60px_repeat(12,_minmax(40px,_1fr))] gap-2 mb-4">
-            <div></div>
-            {[...Array(12)].map((_, i) => (
-              <div key={i} className="text-center font-bold text-yellow-300">{i + 1}</div>
-            ))}
-          </div>
           <SeatList danhSachGhe={danhSachGhe} gheDangChon={gheDangChon} onSelect={handleSelect} />
           <div className="mt-6 w-full text-center bg-yellow-500 text-black font-semibold py-2 uppercase tracking-wide">Screen this way</div>
         </div>
@@ -117,10 +128,26 @@ const BookingPage = () => {
             </button>
           )}
 
+          {/* Nút chuyển trang result */}
+          <button
+            onClick={goToResultPage}
+            className="w-full mt-2 bg-orange-400 hover:bg-yellow-800 text-white font-bold py-2 px-4 rounded"
+          >
+            Xem trang kết quả
+          </button>
+
           {/* Lịch sử đặt vé */}
           {bookingHistory.length > 0 && (
             <div className="mt-6">
-              <h3 className="font-bold text-lg text-yellow-400 mb-2">Lịch sử đặt vé:</h3>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-bold text-lg text-yellow-400">Lịch sử đặt vé:</h3>
+                <button
+                  onClick={clearHistory}
+                  className="text-red-400 text-sm underline hover:text-red-600"
+                >
+                  Xoá lịch sử
+                </button>
+              </div>
               <ul className="text-sm space-y-1">
                 {bookingHistory.map((item, idx) => (
                   <li key={idx} className="border-b border-gray-600 pb-1">
