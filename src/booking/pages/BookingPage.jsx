@@ -56,9 +56,10 @@ const BookingPage = () => {
   };
 
   const clearHistory = () => {
+    const allSeats = bookingHistory.flatMap(item => item.seats);
+    dispatch(resetGhe(allSeats));
     setBookingHistory([]);
     localStorage.removeItem('bookingHistory');
-    dispatch(resetGhe([]));
   };
 
   const goToResultPage = () => {
@@ -131,7 +132,7 @@ const BookingPage = () => {
           {/* Nút chuyển trang result */}
           <button
             onClick={goToResultPage}
-            className="w-full mt-2 bg-orange-400 hover:bg-yellow-800 text-white font-bold py-2 px-4 rounded"
+            className="w-full mt-2 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
           >
             Xem trang kết quả
           </button>
